@@ -1,3 +1,5 @@
+package linearAlgebra;
+
 public class MatrixSolvLU {
 	
 	public MatrixSolvLU () {}

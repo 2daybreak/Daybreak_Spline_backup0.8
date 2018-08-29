@@ -1,7 +1,5 @@
-import GeoModel.InterpolatedCurve
-import GeoModel.Circle
-import GeoModel.Nurbs
-import LinearAlgebra.Vector3
+import geoModel.*
+import linearAlgebra.Vector3
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics
@@ -29,7 +27,7 @@ class MainJPanel: JPanel() {
 
     // Geometry
     val spline = mutableListOf<InterpolatedCurve>()
-    val nurbs   = mutableListOf<Nurbs>()
+    val nurbs  = mutableListOf<InterpolatedNurbs>()
     val circle  = mutableListOf<Circle>()
 
     // Table
@@ -83,10 +81,10 @@ class MainJPanel: JPanel() {
         })
         addMouseMotionListener(object: MouseMotionListener {
             override fun mouseDragged(e: MouseEvent) {
-                val v = Vector3(e.x, e.y, 0)
                 when(mode) {
                     Mode.View -> {}
                     Mode.Spline -> {
+                        val v = Vector3(e.x, e.y, 0)
                         val i = spline[ing].pts.indexOf(u)
                         println("i=$i")
                         spline[ing].removePts(i)
@@ -145,8 +143,8 @@ class MainJPanel: JPanel() {
         g as Graphics2D
         val size = 10.0
         val half = size / 2
-        for (b in spline) {
 
+        for (b in spline) {
             //Draw control polygon
             g.color = Color.GRAY; g.stroke = BasicStroke()
             for (i in 1 until b.ctrlPts.size) {
@@ -155,7 +153,6 @@ class MainJPanel: JPanel() {
                         b.ctrlPts[i].x.toInt(),
                         b.ctrlPts[i].y.toInt())
             }
-
             //Draw B-spline curve (interpolation of pts)
             g.color = Color.CYAN; g.stroke = BasicStroke()
             if(b == spline[ing]) g.color = Color.YELLOW
@@ -168,18 +165,30 @@ class MainJPanel: JPanel() {
                         p2.x.toInt(),
                         p2.y.toInt())
             }
-
             //Draw ctrlPts
             g.color = Color.LIGHT_GRAY; g.stroke = BasicStroke()
             for (v in b.ctrlPts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
-
             //Draw pts
             g.color = Color.YELLOW; g.stroke = BasicStroke()
             for(v in b.pts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
+            //Draw derivatives at t = 0.5
+            for(i in 1..3) {
+                g.color = when(i) {
+                    1 -> Color.RED
+                    2 -> Color.GREEN
+                    3 -> Color.BLUE
+                    else -> { Color.GRAY }
+                }
+                val p1 = b.curvePoint(0.5)
+                val p2 = b.curveDers(0.5, 3)[i] + p1
+                g.drawLine(p1.x.toInt(),
+                        p1.y.toInt(),
+                        p2.x.toInt(),
+                        p2.y.toInt())
+            }
         }
 
         for (b in circle) {
-
             //Draw control polygon
             g.color = Color.GRAY; g.stroke = BasicStroke()
             for (i in 1 until b.ctrlPts.size) {
@@ -188,7 +197,6 @@ class MainJPanel: JPanel() {
                         b.ctrlPts[i].x.toInt(),
                         b.ctrlPts[i].y.toInt())
             }
-
             //Draw Nurbs curve (interpolation of pts)
             g.color = Color.CYAN
             val n =25
@@ -200,11 +208,24 @@ class MainJPanel: JPanel() {
                         p2.x.toInt(),
                         p2.y.toInt())
             }
-
             //Draw ctrlPts
             g.color = Color.LIGHT_GRAY; g.stroke = BasicStroke()
             for (v in b.ctrlPts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
-
+            //Draw derivatives at t = 0.5
+            for(i in 1..3) {
+                g.color = when(i) {
+                    1 -> Color.RED
+                    2 -> Color.GREEN
+                    3 -> Color.BLUE
+                    else -> { Color.GRAY }
+                }
+                val p1 = b.curvePoint(0.5)
+                val p2 = b.curveDers(0.5, 3)[i] + p1
+                g.drawLine(p1.x.toInt(),
+                        p1.y.toInt(),
+                        p2.x.toInt(),
+                        p2.y.toInt())
+            }
         }
 
     }

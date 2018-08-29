@@ -1,3 +1,5 @@
+package linearAlgebra
+
 class Matrix(val m: Array<DoubleArray>) {
 
     operator fun get(rowIndex: Int, columnIndex: Int): Double {
@@ -153,5 +155,5 @@ class Matrix(val m: Array<DoubleArray>) {
 /*
     val trace = m00 + m11 + m22
 
-    val diagonal = Vector3(m00, m11, m22)
+    val diagonal = linearAlgebra.Vector3(m00, m11, m22)
 */

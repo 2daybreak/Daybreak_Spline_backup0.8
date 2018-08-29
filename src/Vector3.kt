@@ -1,3 +1,5 @@
+package linearAlgebra
+
 import kotlin.math.sqrt
 
 class Vector3(val x: Double, val y: Double, val z: Double) {
@@ -10,6 +12,8 @@ class Vector3(val x: Double, val y: Double, val z: Double) {
 
     constructor(): this(0.0, 0.0, 0.0)
     constructor(v: Vector3): this(v.x, v.y, v.z)
+    constructor(x: Int, y: Int, z: Int) : this(x.toDouble(), y.toDouble(), z.toDouble())
+    constructor(x: Float, y: Float, z: Float): this(x.toDouble(), y.toDouble(), z.toDouble())
 
     operator fun get(index: Int): Double {
         return when (index) {
@@ -19,12 +23,17 @@ class Vector3(val x: Double, val y: Double, val z: Double) {
             else -> throw IndexOutOfBoundsException("Index out of bounds at $index")
         }
     }
+    override fun toString()        = "[x = ${x}, y = ${y}, z = ${z}]"
     operator fun unaryPlus()       = Vector3(+x, +y, +z)
     operator fun unaryMinus()      = Vector3(-x, -y, -z)
     operator fun times(d: Double)  = Vector3(x * d, y * d, z * d)
+    operator fun times(d: Float)   = Vector3(x * d, y * d, z * d)
+    operator fun times(d: Int)     = Vector3(x * d, y * d, z * d)
     operator fun div  (d: Double)  = Vector3(x / d, y / d, z / d)
+    operator fun div  (d: Float)   = Vector3(x / d, y / d, z / d)
+    operator fun div  (d: Int)     = Vector3(x / d, y / d, z / d)
     operator fun plus (v: Vector3) = Vector3(x + v.x, y + v.y, z + v.z)
     operator fun minus(v: Vector3) = Vector3(x - v.x, y - v.y, z - v.z)
     fun dot(v: Vector3)  = x * v.x + y * v.y + z * v.z
-    fun cross(v:Vector3) = Vector3(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x)
+    fun cross(v: Vector3) = Vector3(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x)
 }

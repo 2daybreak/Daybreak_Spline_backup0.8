@@ -1,65 +1,57 @@
-import MatrixSolvLU.*
+package geoModel
+
+import linearAlgebra.Vector3
 import kotlin.math.min
 
-open class Bspline(private val maxDeg: Int): Curve_prm() {
-    /*
-    A Nurbs curve is defined by
-    C(u) = Sigma Ni(u) * wi * Pi / Sigma Ni(u) * wi
-    */
-    private var degree: Int = 0
-    private var order : Int = 1
+abstract class Bspline(private val maxDeg: Int): Parametric() {
 
-    protected val knots   = mutableListOf<Double>()
-    protected val ctrlPts = mutableListOf<Vector3>()
+    /*  A B-Spline curve is defined by
+        C(u) = Sum( Ni(u) * Pi )
+        where Pi are the control points, and Ni(u) are the basis funcs defined on the knot vector */
 
-    override fun addPts(v: Vector3) {
-        super.addPts(v)
-        degree(); order(); evalKnots(); evalCtrlPoints()
-    }
-    override fun removePts(v: Vector3) {
-        super.removePts(v)
-        degree(); order()
-        if(!pts.isEmpty()) { evalKnots(); evalCtrlPoints() }
-    }
-    private fun degree() {
-        val nm1 = pts.size - 1
+    val ctrlPts = mutableListOf<Vector3>()
+    val knots   = mutableListOf<Double>()
+    var degree = 0
+    var order = 1
+
+    protected abstract fun evalCtrlPoints()
+    protected abstract fun evalKnots()
+
+    protected fun degree() {
+        val nm1 = ctrlPts.size - 1
         degree = when(nm1 > maxDeg) {
             true  -> maxDeg
             false -> nm1
         }
     }
-    private fun order() { order = degree + 1}
-    private fun evalKnots() {
-        /*  Evaluate knot vector. For the uniform spacing, e.g.
-        ctrlPts 1 (point)    : n=1,deg=0,order=1,knots={0,1}
-        ctrlPts 2 (linear)   : n=2,deg=1,order=2,knots={0,0,1,1}
-        ctrlPts 3 (quadratic): n=3,deg=2,order=3,knots={0,0,0,1,1,1}
-        ctrlPts 4 (cubic)    : n=4,deg=3,order=4,knots={0,0,0,0,1,1,1,1}
-        ctrlPts 5 (quartic)  : n=5,deg=4,order=5,knots={0,0,0,0,0,1,1,1,1,1}
-        ctrlPts 6 (quintic)  : n=6,deg=5,order=6,knots={0,0,0,0,0,0,1,1,1,1,1,1}
-        ctrlPts 7 (quintic)  : n=7,deg=5,order=6,knots={0,0,0,0,0,0,1/2,1,1,1,1,1,1}
-        ctrlPts 8 (quintic)  : n=8,deg=5,order=6,knots={0,0,0,0,0,0,1/3,2/3,1,1,1,1,1,1}
-        general   (quintic)  : n= ,deg=5,order=6,knots={...,[1/(n-deg),...,(n-order)/(n-deg)],...,} */
-        knots.clear()
-        for(i in 1..order) knots.add(0.toDouble())
-        for(i in 1..order) knots.add(1.toDouble())
-        for(i in 1..pts.size - order) {
-            var interval = 0.0
-            //averaging spacing(reflecting the distribution of prm)
-            for(j in i until i + degree) interval += prm[j - 1]
-            interval /= degree
-            knots.add(order + i, interval)
+
+    protected fun order() { order = degree + 1}
+
+    override fun evalPrm() {
+        prm.clear()
+        var sum = 0.toDouble()
+        prm.add(sum)
+        //Chord length method
+        for(i in 1 until ctrlPts.count())
+        {
+            val del = ctrlPts[i] - ctrlPts[i - 1]
+            sum += del.length
+        }
+        for(i in 1 until ctrlPts.count())
+        {
+            val del = ctrlPts[i] - ctrlPts[i - 1]
+            prm.add(prm[i - 1] + del.length / sum)
         }
     }
-    private fun findIndexSpan(t: Double): Int {
+
+    //Algorithm 2.1
+    protected fun findIndexSpan(n: Int, t: Double): Int {
         var t = t
         //Make sure the parameter t is within the knots range
-        val max: Double = knots.max()!!
-        val min: Double = knots.min()!!
-        if(t > max) t = 1.0
-        if(t < min) t = 0.0
+        if(t > knots.max()?: 1.0) t = 1.0
+        if(t < knots.min()?: 0.0) t = 0.0
         //Find index of ith knot span(half-open interval)
-        val nm1 = pts.size - 1
+        val nm1 = n - 1
         if(t >= knots.max()!!) return nm1 //special case of t at the curve end
         var low: Int  = degree
         var high: Int = nm1 + 1
@@ -71,36 +63,38 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
             else
                 low = mid
             mid = (high + low) / 2
-            println("stuck in while loop: t = $t, mid=${knots[mid]}, mid+1=${knots[mid+1]}")
+            //println("stuck in while loop: t = $t, mid=${knots[mid]}, mid+1=${knots[mid+1]}")
         }
         return mid
     }
+
     //Algorithm 2.2
-    private fun basisFuncs(span: Int, t: Double) : DoubleArray {
-    /*  Compute nonvanishing basis functions
-    deg = 0 : Ni are step func.
-    deg = 1 : linear basis func.
-    deg = 2 : quadratic basis func.
-    deg = 3 : cubic basis func.
-    deg = 4 : quartic  basis func.
-    deg = 5 : quintic basis func.   */
+    protected fun basisFuncs(span: Int, t: Double) : DoubleArray {
+        /*  Compute nonvanishing basis functions
+        deg = 0 : Ni are step func.
+        deg = 1 : linear basis func.
+        deg = 2 : quadratic basis func.
+        deg = 3 : cubic basis func.
+        deg = 4 : quartic  basis func.
+        deg = 5 : quintic basis func.   */
         val left = DoubleArray(order)
         val right = DoubleArray(order)
-        val nn = DoubleArray(order)
-        nn[0] = 1.0
+        val ni = DoubleArray(order)
+        ni[0] = 1.0
         for(j in 1..degree) {
             left[j] = t - knots[span + 1 - j]
             right[j] = knots[span + j] - t
             var saved = 0.0
             for(k in 0 until j) {
-                val tmp = nn[k] / (right[k + 1] + left[j - k])
-                nn[k] = saved + right[k + 1] * tmp
+                val tmp = ni[k] / (right[k + 1] + left[j - k])
+                ni[k] = saved + right[k + 1] * tmp
                 saved = left[j - k] * tmp
             }
-            nn[j] = saved
+            ni[j] = saved
         }
-        return nn
+        return ni
     }
+
     //Algorithm 2.3
     protected fun dersBasisFunc(span: Int, t: Double, kmax: Int): Array<DoubleArray> {
         /* Compute nonzero basis functions and their derivatives
@@ -185,9 +179,10 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
         }
         return ders
     }
+
     //Algorithm 3.1
-    fun curvePoint(t: Double): Vector3 {
-        val span = findIndexSpan(t)
+    override fun curvePoint(t: Double): Vector3 {
+        val span = findIndexSpan(ctrlPts.size, t)
         val nn = basisFuncs(span, t)
         var v = Vector3().zero
         for (j in 0..degree)
@@ -196,15 +191,16 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
         }
         return v
     }
+
     //Algorithm 3.2
-    fun curveDers(t: Double, kmax: Int): Array<Vector3> {
+    override fun curveDers(t: Double, kmax: Int): Array<Vector3> {
         // Compute kth derivatives
-        var v = Array(kmax + 1,{Vector3()})
+        val v = Array(kmax + 1) { Vector3() }
         /* Allow kmax > degree, although the ders. are 0 in this case for nonrational curves,
             but these ders. are needed for rational curves */
-        val du = min(kmax, degree)
+        val du = minOf(kmax, degree)
         for(k in order..kmax) v[k] = Vector3().zero
-        val span = findIndexSpan(t)
+        val span = findIndexSpan(ctrlPts.size, t)
         val nders = dersBasisFunc(span, t, du)
         for (k in 0..du)
         {
@@ -216,12 +212,13 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
         }
         return v
     }
+
     //Algorithm 5.1
     private fun curveKnotInsert(t: Double)
     {
         val low: Int
         val q = mutableListOf<Vector3>()
-        val span = findIndexSpan(t)
+        val span = findIndexSpan(ctrlPts.size, t)
 
         for (i in 0..degree)
         {
@@ -243,6 +240,7 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
             ctrlPts.add(low + i, q[i])
         }
         knots.add(span + 1, t)
+        /*
         super.addPts(Vector3().zero) //dummy corresponding control points
 
         evalPrmKnotAverages()
@@ -251,7 +249,10 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
             //Replaces pts at the specified position in this list
             pts[i] = curvePoint(prm[i])
         }
+        */
     }
+
+    /*
     private fun evalPrmKnotAverages()
     {
         for (i in pts.indices)
@@ -265,34 +266,30 @@ open class Bspline(private val maxDeg: Int): Curve_prm() {
             prm[i] = average
         }
     }
-    //Algorithm 9.1
-    //inefficient Algorithm due to the whole ctrlPts to be evaluated
-    private fun evalCtrlPoints()
-    {
-        // Evaluate B-spline control points by the given points on a curve
-        val n = pts.size
-        val aa  = Array(n) {DoubleArray(n)}
-        for (i in pts.indices) {
-            val span = findIndexSpan(prm[i])
-            val nn = basisFuncs(span, prm[i])
-            for (j in 0..degree) aa[i][span - degree + j] = nn[j]
+    */
+
+    fun closestPoint(v: Vector3): Vector3 {
+        //initial search
+        val n = 8 * ctrlPts.size
+        var t = 0.0
+        var min = (curvePoint(t) - v).length
+        for(i in 1..n) {
+            val tmp = i.toDouble() / n
+            val dum = (curvePoint(tmp) - v).length
+            if(dum < min) {
+                min = dum
+                t = tmp
+            }
         }
-        val bx = DoubleArray(n)
-        val by = DoubleArray(n)
-        val bz = DoubleArray(n)
-        for (i in pts.indices) {
-            bx[i] = pts[i].x
-            by[i] = pts[i].y
-            bz[i] = pts[i].z
+        var u = curveDers(t, 2)
+        var isOrthogonal = false
+        var isCoincidence = false
+        while(!isOrthogonal || !isCoincidence) {
+            t -= u[1].dot(u[0] - v) / (u[2].dot(u[0] - v) + u[1].dot(u[1]))
+            u = curveDers(t, 2)
+            isOrthogonal = u[1].dot(u[0] - v) < 0.000001
+            isCoincidence = (u[0] - v).length < 0.000001
         }
-        if (n >= 3) {
-            val indx = IntArray(n)
-            ludcmp(n, aa, indx)
-            lubksb(n, aa, indx, bx)
-            lubksb(n, aa, indx, by)
-            lubksb(n, aa, indx, bz)
-        }
-        ctrlPts.clear()
-        for (i in pts.indices) ctrlPts.add(Vector3(bx[i],by[i],bz[i]))
+
     }
 }

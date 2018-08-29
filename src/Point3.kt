@@ -1,4 +1,4 @@
-import LinearAlgebra.Vector3
+import linearAlgebra.Vector3
 
 class Point3(val width : Double, val height: Double, val v: Vector3) {
 

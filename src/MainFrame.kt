@@ -1,4 +1,7 @@
-import GeoModel.InterpolatedCurve
+import geoModel.Circle
+import geoModel.InterpolatedCurve
+import geoModel.InterpolatedNurbs
+import linearAlgebra.Vector3
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import javax.swing.* //Swing: Light weight component
@@ -101,13 +104,6 @@ class MainFrame : JFrame() {
         val curve = JMenu("Spline")
         jMenuBar.add(curve)
 
-        /*
-        val tmp = JMenuItem("")
-        draw.add(tmp)
-        tmp.accelerator = KeyStroke.getKeyStroke(KeyEvent, ActionEvent)
-        tmp.addActionListener{e: ActionEvent -> }
-        */
-
         val line = JMenuItem("Line")
         curve.add(line)
         line.addActionListener{ e: ActionEvent -> TODO()}
@@ -115,7 +111,7 @@ class MainFrame : JFrame() {
         val circle = JMenuItem("Circle")
         curve.add(circle)
         circle.addActionListener{ e: ActionEvent ->
-            //modelTree.mainPanel.circle.add(Circle(Vector3(300.0, 300.0, 0.0), 300.0))
+            modelTree.mainPanel.circle.add(Circle(Vector3(300.0, 300.0, 0.0), 300.0))
         }
 
         val spline = JMenuItem("Spline")
@@ -132,7 +128,7 @@ class MainFrame : JFrame() {
         val nurbs = JMenuItem("Nurbs")
         curve.add(nurbs)
         nurbs.addActionListener{ e: ActionEvent ->
-            //modelTree.mainPanel.nurbs.add(Nurbs(3))
+            modelTree.mainPanel.nurbs.add(InterpolatedNurbs(3))
             modelTree.mainPanel.ing = modelTree.mainPanel.nurbs.size - 1
             modelTree.mainPanel.mode = MainJPanel.Mode.Nurbs
             modelTree.geometry.add(DefaultMutableTreeNode("nurbs"))
