@@ -4,12 +4,12 @@ import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Graphics
 import java.awt.Graphics2D
-import java.awt.geom.Ellipse2D
 import java.awt.event.MouseListener
 import java.awt.event.MouseMotionListener
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelListener
 import java.awt.event.MouseWheelEvent
+import java.awt.geom.Ellipse2D
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.JScrollPane
@@ -20,15 +20,14 @@ class MainJPanel: JPanel() {
 
     // Mouse, Key, Logic
     var ing = 0
-    var u = Vector3()
+    var oldVector = Vector3()
+    var oldIndex = 0
     var clickPts = false
     var mode = Mode.View
-    enum class Mode{View, Spline, Nurbs}
+    enum class Mode{View, Curve}
 
     // Geometry
-    val spline = mutableListOf<InterpolatedCurve>()
-    val nurbs  = mutableListOf<InterpolatedNurbs>()
-    val circle  = mutableListOf<Circle>()
+    val curve = mutableListOf<Parametric>()
 
     // Table
     private val tableModel = DefaultTableModel()
@@ -52,22 +51,33 @@ class MainJPanel: JPanel() {
             override fun mouseExited (e: MouseEvent) { }
             override fun mouseEntered(e: MouseEvent) { }
             override fun mousePressed(e: MouseEvent) {
-
+                val c = curve[ing]
                 when (e.button) {
                     MouseEvent.BUTTON1 -> {
                         val v = Vector3(e.x, e.y, 0)
-                        u = v
+                        oldVector = v
                         when(mode) {
                             Mode.View -> {}
-                            Mode.Spline -> {
-                                for (p in spline[ing].pts) {
-                                    if (Point3(size, p).contains(e.x, e.y)) {
-                                        clickPts = true
-                                        u = p
-                                        break
+                            Mode.Curve -> {
+                                if(c is InterpolatedBspline) {
+                                    for (t in c.prm) {
+                                        if (Point3(size, c.curvePoint(t)).contains(e.x, e.y)) {
+                                            clickPts = true
+                                            oldIndex = c.prm.indexOf(t)
+                                            break
+                                        }
                                     }
                                 }
-                                if (!clickPts) spline[ing].addPts(v)
+                                else {
+                                    for (p in c.ctrlPts) {
+                                        if (Point3(size, p).contains(e.x, e.y)) {
+                                            clickPts = true
+                                            oldVector = p
+                                            break
+                                        }
+                                    }
+                                }
+                                if (!clickPts) c.addPts(v) // curve[ing].addPts(v)
                                 clickPts = false
                             }
                         }
@@ -81,16 +91,25 @@ class MainJPanel: JPanel() {
         })
         addMouseMotionListener(object: MouseMotionListener {
             override fun mouseDragged(e: MouseEvent) {
+                val c = curve[ing]
                 when(mode) {
                     Mode.View -> {}
-                    Mode.Spline -> {
+                    Mode.Curve -> {
                         val v = Vector3(e.x, e.y, 0)
-                        val i = spline[ing].pts.indexOf(u)
-                        println("i=$i")
-                        spline[ing].removePts(i)
-                        spline[ing].addPts(i, v)
-                        u = v
-                        repaint()
+                        if(c is InterpolatedBspline) {
+                            c.removePts(oldIndex)
+                            c.addPts(oldIndex, v)
+                            repaint()
+                        }
+                        else {
+                            val i = c.ctrlPts.indexOf(oldVector)
+                            println("oldVector=$oldVector")
+                            println("i=$i")
+                            c.removePts(i)
+                            c.addPts(i, v)
+                            oldVector = v
+                            repaint()
+                        }
                     }
                 }
 
@@ -103,10 +122,7 @@ class MainJPanel: JPanel() {
             }
 
         })
-        iniTable()
-    }
 
-    private fun iniTable() {
         table.background = Color(50, 50, 50)
         table.foreground = Color.lightGray
         tableModel.addTableModelListener { e: TableModelEvent ->
@@ -114,20 +130,19 @@ class MainJPanel: JPanel() {
             val v = DoubleArray(3)
             if (row > -1) {
                 try {
+                    val c = curve[ing]
                     for(i in 0..2) v[i] = table.getValueAt(row, i).toString().toDouble()
                     when(mode) {
-                        Mode.Spline -> {
-                            spline[ing].removePts(row)
-                            spline[ing].addPts(row, Vector3(v[0], v[1], v[2]))
+                        Mode.Curve -> {
+                            c.removePts(row)
+                            c.addPts(row, Vector3(v[0], v[1], v[2]))
                         }
                     }
-
                 } catch (e: NumberFormatException) {
                     println(e.message)
                 } finally {
                     repaint()
                 }
-
             }
         }
     }
@@ -141,100 +156,85 @@ class MainJPanel: JPanel() {
 
         super.paintComponent(g)
         g as Graphics2D
+
         val size = 10.0
         val half = size / 2
+        val linePerNode = 8
 
-        for (b in spline) {
-            //Draw control polygon
-            g.color = Color.GRAY; g.stroke = BasicStroke()
-            for (i in 1 until b.ctrlPts.size) {
-                g.drawLine( b.ctrlPts[i - 1].x.toInt(),
-                        b.ctrlPts[i - 1].y.toInt(),
-                        b.ctrlPts[i].x.toInt(),
-                        b.ctrlPts[i].y.toInt())
-            }
-            //Draw B-spline curve (interpolation of pts)
-            g.color = Color.CYAN; g.stroke = BasicStroke()
-            if(b == spline[ing]) g.color = Color.YELLOW
-            val n = b.pts.size * 8
-            if(b.pts.size > 1) for (i in 1 until n) {
-                val p1 = b.curvePoint((i - 1).toDouble() / (n - 1).toDouble())
-                val p2 = b.curvePoint(      i.toDouble() / (n - 1).toDouble())
-                g.drawLine(p1.x.toInt(),
-                        p1.y.toInt(),
-                        p2.x.toInt(),
-                        p2.y.toInt())
-            }
-            //Draw ctrlPts
-            g.color = Color.LIGHT_GRAY; g.stroke = BasicStroke()
+        for(b in curve) {
+            //Draw control points
+            if(b is InterpolatedBspline || b is InterpolatedNurbs)
+                g.color = Color.LIGHT_GRAY
+            else
+                g.color = Color.YELLOW
             for (v in b.ctrlPts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
-            //Draw pts
-            g.color = Color.YELLOW; g.stroke = BasicStroke()
-            for(v in b.pts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
-            //Draw derivatives at t = 0.5
-            for(i in 1..3) {
-                g.color = when(i) {
-                    1 -> Color.RED
-                    2 -> Color.GREEN
-                    3 -> Color.BLUE
-                    else -> { Color.GRAY }
-                }
-                val p1 = b.curvePoint(0.5)
-                val p2 = b.curveDers(0.5, 3)[i] + p1
-                g.drawLine(p1.x.toInt(),
-                        p1.y.toInt(),
-                        p2.x.toInt(),
-                        p2.y.toInt())
-            }
-        }
-
-        for (b in circle) {
             //Draw control polygon
-            g.color = Color.GRAY; g.stroke = BasicStroke()
+            if(b is InterpolatedBspline || b is InterpolatedNurbs)
+                g.color = Color.GRAY
+            else
+                g.color = Color.WHITE
+            g.stroke = BasicStroke()
             for (i in 1 until b.ctrlPts.size) {
-                g.drawLine( b.ctrlPts[i - 1].x.toInt(),
+                g.drawLine(b.ctrlPts[i - 1].x.toInt(),
                         b.ctrlPts[i - 1].y.toInt(),
                         b.ctrlPts[i].x.toInt(),
                         b.ctrlPts[i].y.toInt())
             }
-            //Draw Nurbs curve (interpolation of pts)
+            //Draw curve (interpolation of pts)
             g.color = Color.CYAN
-            val n =25
-            for(i in 1 until n) {
+            g.stroke = BasicStroke()
+            val n = b.ctrlPts.size * linePerNode
+            if (b.ctrlPts.size > 1) for (i in 1 until n) {
                 val p1 = b.curvePoint((i - 1).toDouble() / (n - 1).toDouble())
-                val p2 = b.curvePoint(      i.toDouble() / (n - 1).toDouble())
+                val p2 = b.curvePoint(i.toDouble() / (n - 1).toDouble())
                 g.drawLine(p1.x.toInt(),
                         p1.y.toInt(),
                         p2.x.toInt(),
                         p2.y.toInt())
             }
-            //Draw ctrlPts
-            g.color = Color.LIGHT_GRAY; g.stroke = BasicStroke()
-            for (v in b.ctrlPts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
+            //Draw points
+            g.color = Color.YELLOW
+            g.stroke = BasicStroke()
+            if(b is InterpolatedBspline || b is InterpolatedNurbs)
+                for (p in b.prm)
+                    g.draw(Ellipse2D.Double(
+                            b.curvePoint(p).x - half,
+                            b.curvePoint(p).y - half,
+                            size,
+                            size)
+                    )
+
+
             //Draw derivatives at t = 0.5
-            for(i in 1..3) {
-                g.color = when(i) {
+            /*for (i in 1..3) {
+                g.color = when (i) {
                     1 -> Color.RED
                     2 -> Color.GREEN
                     3 -> Color.BLUE
-                    else -> { Color.GRAY }
+                    else -> {
+                        Color.GRAY
+                    }
                 }
                 val p1 = b.curvePoint(0.5)
                 val p2 = b.curveDers(0.5, 3)[i] + p1
-                g.drawLine(p1.x.toInt(),
-                        p1.y.toInt(),
-                        p2.x.toInt(),
-                        p2.y.toInt())
-            }
+                g.drawLine(p1.x.toInt(),p1.y.toInt(),p2.x.toInt(),p2.y.toInt())
+            }*/
         }
-
     }
 
     private fun updateTable() {
         val list = mutableListOf<Array<Double>>()
         when(mode) {
             Mode.View -> {}
-            Mode.Spline -> for(p in spline[ing].pts) list.add(arrayOf(p.x, p.y, p.z))
+            Mode.Curve -> {
+                val c = curve[ing]
+                if(c is InterpolatedBspline)
+                    for(t in c.prm)
+                        list.add(arrayOf(c.curvePoint(t).x, c.curvePoint(t).y, c.curvePoint(t).z))
+                else
+                    for(p in c.ctrlPts)
+                        list.add(arrayOf(p.x, p.y, p.z))
+            }
         }
         val data = list.toTypedArray()
         val head = arrayOf("x", "y", "z")

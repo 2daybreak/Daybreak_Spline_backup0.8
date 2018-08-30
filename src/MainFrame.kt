@@ -1,6 +1,4 @@
-import geoModel.Circle
-import geoModel.InterpolatedCurve
-import geoModel.InterpolatedNurbs
+import geoModel.*
 import linearAlgebra.Vector3
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
@@ -101,40 +99,74 @@ class MainFrame : JFrame() {
         split.accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.SHIFT_MASK)
         split.addActionListener{ e: ActionEvent -> TODO()}
 
-        val curve = JMenu("Spline")
+        val curve = JMenu("Curve")
         jMenuBar.add(curve)
 
         val line = JMenuItem("Line")
         curve.add(line)
-        line.addActionListener{ e: ActionEvent -> TODO()}
+        line.addActionListener{ e: ActionEvent -> modelTree.mainPanel.curve.add(Line())
+            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
+            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
+            modelTree.geometry.add(DefaultMutableTreeNode("line"))
+            modelTree.model.reload()
+            modelTree.tree.expandRow(0)
+        }
 
         val circle = JMenuItem("Circle")
         curve.add(circle)
         circle.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.circle.add(Circle(Vector3(300.0, 300.0, 0.0), 300.0))
+            modelTree.mainPanel.curve.add(Circle(Vector3(300.0, 300.0, 0.0), 300.0))
         }
 
-        val spline = JMenuItem("Spline")
+        val spline = JMenu("Spline")
         curve.add(spline)
-        spline.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.spline.add(InterpolatedCurve(3))
-            modelTree.mainPanel.ing = modelTree.mainPanel.spline.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Spline
+
+        val ctrlBspline = JMenuItem("Control Points")
+        ctrlBspline.addActionListener{ e: ActionEvent ->
+            modelTree.mainPanel.curve.add(Bspline(3))
+            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
+            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
             modelTree.geometry.add(DefaultMutableTreeNode("spline"))
             modelTree.model.reload()
             modelTree.tree.expandRow(0)
         }
+        spline.add(ctrlBspline)
 
-        val nurbs = JMenuItem("Nurbs")
+        val passBspline = JMenuItem("Passing Points")
+        passBspline.addActionListener{ e: ActionEvent ->
+            modelTree.mainPanel.curve.add(InterpolatedBspline(3))
+            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
+            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
+            modelTree.geometry.add(DefaultMutableTreeNode("spline"))
+            modelTree.model.reload()
+            modelTree.tree.expandRow(0)
+        }
+        spline.add(passBspline)
+
+        val nurbs = JMenu("Nurbs")
         curve.add(nurbs)
-        nurbs.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.nurbs.add(InterpolatedNurbs(3))
-            modelTree.mainPanel.ing = modelTree.mainPanel.nurbs.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Nurbs
+
+        val ctrlNurbs = JMenuItem("Control Points")
+        ctrlNurbs.addActionListener{ e: ActionEvent ->
+            modelTree.mainPanel.curve.add(Nurbs(3))
+            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
+            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
             modelTree.geometry.add(DefaultMutableTreeNode("nurbs"))
             modelTree.model.reload()
             modelTree.tree.expandRow(0)
         }
+        nurbs.add(ctrlNurbs)
+
+        val passNurbs = JMenuItem("Passing Points")
+        passNurbs.addActionListener{ e: ActionEvent ->
+            modelTree.mainPanel.curve.add(InterpolatedNurbs(3))
+            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
+            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
+            modelTree.geometry.add(DefaultMutableTreeNode("nurbs"))
+            modelTree.model.reload()
+            modelTree.tree.expandRow(0)
+        }
+        nurbs.add(passNurbs)
 
         val surface = JMenu("Surface")
         jMenuBar.add(surface)
@@ -146,10 +178,9 @@ class MainFrame : JFrame() {
         jMenuBar.add(window)
 
         val dataTable = JMenuItem("DataTable")
-        window.add(dataTable)
         dataTable.accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK)
         dataTable.addActionListener{e: ActionEvent -> modelTree.mainPanel.subFrame.isVisible = true}
-
+        window.add(dataTable)
     }
 
 }

@@ -3,15 +3,43 @@ package geoModel
 import linearAlgebra.Vector3
 import linearAlgebra.binomialCoef
 
-abstract class Nurbs(maxDeg: Int): Bspline(maxDeg) {
+open class Nurbs(maxDeg: Int): Bspline(maxDeg) {
 
     /*  A Nurbs curve is defined by
-        C(u) = Sum( Ni(u) * wi * Pi ) / Sum( Ni(u) * wi )
-        where Pi are the control points, wi are the weights, and Ni(u) are the basis funcs defined on the knot vector */
+        C(oldVector) = Sum( Ni(oldVector) * wi * Pi ) / Sum( Ni(oldVector) * wi )
+        where Pi are the control points, wi are the weights, and Ni(oldVector) are the basis funcs defined on the knot vector */
 
     val wts = mutableListOf<Double>()
 
-    protected abstract fun evalWeights()
+    override fun addPts(v: Vector3) {
+        super.addPts(v); wts.add(1.0)
+    }
+
+    override fun addPts(i: Int, v: Vector3) {
+        super.addPts(i, v); wts.add(1.0)
+    }
+
+    override fun removePts(i: Int) {
+        super.removePts(i)
+        if(i != -1) wts.removeAt(i)
+    }
+
+    override fun evalPrm() {
+        prm.clear()
+        var sum = 0.toDouble()
+        prm.add(sum)
+        //Chord length method
+        for(i in 1 until ctrlPts.count())
+        {
+            val del = ctrlPts[i] - ctrlPts[i - 1]
+            sum += del.length
+        }
+        for(i in 1 until ctrlPts.count())
+        {
+            val del = ctrlPts[i] - ctrlPts[i - 1]
+            prm.add(prm[i - 1] + del.length / sum)
+        }
+    }
 
     //Algorithm 4.1 mod
     private fun denominator(span: Int, t: Double, ni: DoubleArray): Double {
@@ -31,7 +59,7 @@ abstract class Nurbs(maxDeg: Int): Bspline(maxDeg) {
 
     //Algorithm 4.1
     override fun curvePoint(t: Double): Vector3 {
-        val span = findIndexSpan(wts.size, t)
+        val span = findIndexSpan(ctrlPts.size, t)
         val ni = basisFuncs(span, t)
         return numerator(span, t, ni) / denominator(span, t, ni)
     }

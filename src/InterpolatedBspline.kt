@@ -1,9 +1,9 @@
 package geoModel
 
-import linearAlgebra.MatrixSolvLU
 import linearAlgebra.Vector3
+import linearAlgebra.MatrixSolvLU.*
 
-class InterpolatedNurbs(maxDeg: Int): Nurbs(maxDeg) {
+class InterpolatedBspline(maxDeg: Int): Bspline(maxDeg) {
 
     val pts = mutableListOf<Vector3>()
 
@@ -17,7 +17,7 @@ class InterpolatedNurbs(maxDeg: Int): Nurbs(maxDeg) {
 
     override fun removePts(i: Int) {
         super.removePts(i)
-        if(i != -1) pts.removeAt(i);
+        if(i != -1) pts.removeAt(i)
         if(!pts.isEmpty()) evalCtrlPoints()
     }
 
@@ -38,29 +38,6 @@ class InterpolatedNurbs(maxDeg: Int): Nurbs(maxDeg) {
         }
     }
 
-    override fun evalKnots() {
-        /*  Evaluate knot vector. For the uniform spacing, e.g.
-        ctrlPts 1 (point)    : n=1,deg=0,order=1,knots={0,1}
-        ctrlPts 2 (linear)   : n=2,deg=1,order=2,knots={0,0,1,1}
-        ctrlPts 3 (quadratic): n=3,deg=2,order=3,knots={0,0,0,1,1,1}
-        ctrlPts 4 (cubic)    : n=4,deg=3,order=4,knots={0,0,0,0,1,1,1,1}
-        ctrlPts 5 (quartic)  : n=5,deg=4,order=5,knots={0,0,0,0,0,1,1,1,1,1}
-        ctrlPts 6 (quintic)  : n=6,deg=5,order=6,knots={0,0,0,0,0,0,1,1,1,1,1,1}
-        ctrlPts 7 (quintic)  : n=7,deg=5,order=6,knots={0,0,0,0,0,0,1/2,1,1,1,1,1,1}
-        ctrlPts 8 (quintic)  : n=8,deg=5,order=6,knots={0,0,0,0,0,0,1/3,2/3,1,1,1,1,1,1}
-        general   (quintic)  : n= ,deg=5,order=6,knots={...,[1/(n-deg),...,(n-order)/(n-deg)],...,} */
-        knots.clear()
-        for(i in 1..order) knots.add(0.toDouble())
-        for(i in 1..order) knots.add(1.toDouble())
-        for(i in 1..pts.size - order) {
-            var interval = 0.0
-            //averaging spacing(reflecting the distribution of prm)
-            for(j in i until i + degree) interval += prm[j]
-            interval /= degree
-            knots.add(degree + i, interval)
-        }
-    }
-
     //Algorithm 9.1
     private fun evalCtrlPoints()
     {
@@ -77,8 +54,8 @@ class InterpolatedNurbs(maxDeg: Int): Nurbs(maxDeg) {
             for (j in 0..2) bb[j][i] = pts[i][j]
         if (n >= 3) {
             val indx = IntArray(n)
-            MatrixSolvLU.ludcmp(n, aa, indx)
-            for (j in 0..2) MatrixSolvLU.lubksb(n, aa, indx, bb[j])
+            ludcmp(n, aa, indx)
+            for (j in 0..2) lubksb(n, aa, indx, bb[j])
         }
         for (i in pts.indices) ctrlPts[i] = Vector3(bb[0][i], bb[1][i], bb[2][i])
     }

@@ -8,7 +8,6 @@ class Circle(val center: Vector3, val dia: Double): Nurbs(3) {
     val rds = dia / 2
 
     init {
-
         degree = 2
         order = 3
         evalKnots()
@@ -16,7 +15,7 @@ class Circle(val center: Vector3, val dia: Double): Nurbs(3) {
         evalWeights()
     }
 
-    override fun evalWeights() {
+    private fun evalWeights() {
         wts.add(1.0); wts.add(sqrt(2.0)/2)
         wts.add(1.0); wts.add(sqrt(2.0)/2)
         wts.add(1.0); wts.add(sqrt(2.0)/2)
@@ -24,7 +23,7 @@ class Circle(val center: Vector3, val dia: Double): Nurbs(3) {
         wts.add(1.0)
     }
 
-    override fun evalCtrlPoints() {
+    private fun evalCtrlPoints() {
         ctrlPts.add(center + Vector3(rds, 0.0, 0.0))
         ctrlPts.add(center + Vector3(rds, rds, 0.0))
         ctrlPts.add(center + Vector3(0.0, rds, 0.0))

@@ -1,21 +1,17 @@
 package geoModel
 
 import linearAlgebra.Vector3
-import kotlin.math.min
 
-abstract class Bspline(private val maxDeg: Int): Parametric() {
+open class Bspline(private val maxDeg: Int): Parametric() {
 
     /*  A B-Spline curve is defined by
-        C(u) = Sum( Ni(u) * Pi )
-        where Pi are the control points, and Ni(u) are the basis funcs defined on the knot vector */
+        C(oldVector) = Sum( Ni(oldVector) * Pi )
+        where Pi are the control points, and Ni(oldVector) are the basis funcs defined on the knot vector */
 
-    val ctrlPts = mutableListOf<Vector3>()
-    val knots   = mutableListOf<Double>()
-    var degree = 0
-    var order = 1
-
-    protected abstract fun evalCtrlPoints()
-    protected abstract fun evalKnots()
+    override val ctrlPts = mutableListOf<Vector3>()
+    protected val knots = mutableListOf<Double>()
+    protected var degree = 0
+    protected var order = 1
 
     protected fun degree() {
         val nm1 = ctrlPts.size - 1
@@ -26,6 +22,21 @@ abstract class Bspline(private val maxDeg: Int): Parametric() {
     }
 
     protected fun order() { order = degree + 1}
+
+    override fun addPts(v: Vector3) {
+        ctrlPts.add(v)
+        degree(); order(); evalPrm(); evalKnots()
+    }
+
+    override fun addPts(i: Int, v: Vector3) {
+        ctrlPts.add(i, v)
+        degree(); order(); evalPrm(); evalKnots()
+    }
+
+    override fun removePts(i: Int) {
+        if(i != -1) ctrlPts.removeAt(i)
+        if(!ctrlPts.isEmpty()) degree(); order(); evalPrm(); evalKnots()
+    }
 
     override fun evalPrm() {
         prm.clear()
@@ -44,6 +55,29 @@ abstract class Bspline(private val maxDeg: Int): Parametric() {
         }
     }
 
+    protected open fun evalKnots() {
+        /*  Evaluate knot vector. For the uniform spacing, e.g.
+        ctrlPts 1 (point)    : n=1,deg=0,order=1,knots={0,1}
+        ctrlPts 2 (linear)   : n=2,deg=1,order=2,knots={0,0,1,1}
+        ctrlPts 3 (quadratic): n=3,deg=2,order=3,knots={0,0,0,1,1,1}
+        ctrlPts 4 (cubic)    : n=4,deg=3,order=4,knots={0,0,0,0,1,1,1,1}
+        ctrlPts 5 (quartic)  : n=5,deg=4,order=5,knots={0,0,0,0,0,1,1,1,1,1}
+        ctrlPts 6 (quintic)  : n=6,deg=5,order=6,knots={0,0,0,0,0,0,1,1,1,1,1,1}
+        ctrlPts 7 (quintic)  : n=7,deg=5,order=6,knots={0,0,0,0,0,0,1/2,1,1,1,1,1,1}
+        ctrlPts 8 (quintic)  : n=8,deg=5,order=6,knots={0,0,0,0,0,0,1/3,2/3,1,1,1,1,1,1}
+        general   (quintic)  : n= ,deg=5,order=6,knots={...,[1/(n-deg),...,(n-order)/(n-deg)],...,} */
+        knots.clear()
+        for(i in 1..order) knots.add(0.toDouble())
+        for(i in 1..order) knots.add(1.toDouble())
+        for(i in 1..ctrlPts.size - order) {
+            var interval = 0.0
+            //averaging spacing(reflecting the distribution of prm)
+            for(j in i until i + degree) interval += prm[j]
+            interval /= degree
+            knots.add(degree + i, interval)
+        }
+    }
+
     //Algorithm 2.1
     protected fun findIndexSpan(n: Int, t: Double): Int {
         var t = t
@@ -52,7 +86,7 @@ abstract class Bspline(private val maxDeg: Int): Parametric() {
         if(t < knots.min()?: 0.0) t = 0.0
         //Find index of ith knot span(half-open interval)
         val nm1 = n - 1
-        if(t >= knots.max()!!) return nm1 //special case of t at the curve end
+        if(t >= knots.max()?: 1.0) return nm1 //special case of t at the curve end
         var low: Int  = degree
         var high: Int = nm1 + 1
         var mid: Int  = (high + low) / 2
@@ -290,6 +324,6 @@ abstract class Bspline(private val maxDeg: Int): Parametric() {
             isOrthogonal = u[1].dot(u[0] - v) < 0.000001
             isCoincidence = (u[0] - v).length < 0.000001
         }
-
+        TODO()
     }
 }
