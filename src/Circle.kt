@@ -10,20 +10,16 @@ class Circle(val center: Vector3, val dia: Double): Nurbs(3) {
     init {
         degree = 2
         order = 3
-        evalKnots()
-        evalCtrlPoints()
-        evalWeights()
+        evalAll()
     }
 
-    private fun evalWeights() {
-        wts.add(1.0); wts.add(sqrt(2.0)/2)
-        wts.add(1.0); wts.add(sqrt(2.0)/2)
-        wts.add(1.0); wts.add(sqrt(2.0)/2)
-        wts.add(1.0); wts.add(sqrt(2.0)/2)
-        wts.add(1.0)
-    }
-
-    private fun evalCtrlPoints() {
+    private fun evalAll() {
+        knots.add(0.00); knots.add(0.00); knots.add(0.00)
+        knots.add(0.25); knots.add(0.25)
+        knots.add(0.50); knots.add(0.50)
+        knots.add(0.75); knots.add(0.75)
+        knots.add(1.00); knots.add(1.00); knots.add(1.00)
+        
         ctrlPts.add(center + Vector3(rds, 0.0, 0.0))
         ctrlPts.add(center + Vector3(rds, rds, 0.0))
         ctrlPts.add(center + Vector3(0.0, rds, 0.0))
@@ -33,13 +29,11 @@ class Circle(val center: Vector3, val dia: Double): Nurbs(3) {
         ctrlPts.add(center + Vector3(0.0, -rds, 0.0))
         ctrlPts.add(center + Vector3(rds, -rds, 0.0))
         ctrlPts.add(center + Vector3(rds, 0.0, 0.0))
-    }
-
-    override fun evalKnots() {
-        knots.add(0.00); knots.add(0.00); knots.add(0.00)
-        knots.add(0.25); knots.add(0.25)
-        knots.add(0.50); knots.add(0.50)
-        knots.add(0.75); knots.add(0.75)
-        knots.add(1.00); knots.add(1.00); knots.add(1.00)
+        
+        wts.add(1.0); wts.add(sqrt(2.0)/2)
+        wts.add(1.0); wts.add(sqrt(2.0)/2)
+        wts.add(1.0); wts.add(sqrt(2.0)/2)
+        wts.add(1.0); wts.add(sqrt(2.0)/2)
+        wts.add(1.0)
     }
 }
