@@ -5,7 +5,7 @@ import linearAlgebra.MatrixSolvLU.*
 
 class InterpolatedBspline: Bspline {
 
-    val pts = mutableListOf<Vector3>()
+    var pts = mutableListOf<Vector3>()
     
     constructor(max: Int): super(max)
     
