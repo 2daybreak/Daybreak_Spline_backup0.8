@@ -33,6 +33,7 @@ class InterpolatedBspline: Bspline {
     private fun evalCtrlPoints()
     {
         // Evaluate B-spline control points by the given points on a curve
+        ctrlPts.clear()
         val n = pts.size
         val aa  = Array(n) {DoubleArray(n)}
         for (i in pts.indices) {
@@ -48,6 +49,6 @@ class InterpolatedBspline: Bspline {
             ludcmp(n, aa, indx)
             for (j in 0..2) lubksb(n, aa, indx, bb[j])
         }
-        for (i in pts.indices) ctrlPts[i] = Vector3(bb[0][i], bb[1][i], bb[2][i])
+        for (i in pts.indices) ctrlPts.add(Vector3(bb[0][i], bb[1][i], bb[2][i]))
     }
 }
