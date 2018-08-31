@@ -3,7 +3,7 @@ package geoModel
 import linearAlgebra.Vector3
 import linearAlgebra.binomialCoef
 
-open class Nurbs(maxDeg: Int): Bspline(maxDeg) {
+open class Nurbs: Bspline {
 
     /*  A Nurbs curve is defined by
         C(oldVector) = Sum( Ni(oldVector) * wi * Pi ) / Sum( Ni(oldVector) * wi )
@@ -11,6 +11,12 @@ open class Nurbs(maxDeg: Int): Bspline(maxDeg) {
 
     val wts = mutableListOf<Double>()
 
+    constructor(max: Int): super(max)
+    
+    constructor(max: Int, p: MutableList<Vector3>): super(max, p) {
+        for(i in p.indices) wts.add(1.0)
+    }
+    
     override fun addPts(v: Vector3) {
         super.addPts(v); wts.add(1.0)
     }
@@ -22,23 +28,6 @@ open class Nurbs(maxDeg: Int): Bspline(maxDeg) {
     override fun removePts(i: Int) {
         super.removePts(i)
         if(i != -1) wts.removeAt(i)
-    }
-
-    override fun evalPrm() {
-        prm.clear()
-        var sum = 0.toDouble()
-        prm.add(sum)
-        //Chord length method
-        for(i in 1 until ctrlPts.count())
-        {
-            val del = ctrlPts[i] - ctrlPts[i - 1]
-            sum += del.length
-        }
-        for(i in 1 until ctrlPts.count())
-        {
-            val del = ctrlPts[i] - ctrlPts[i - 1]
-            prm.add(prm[i - 1] + del.length / sum)
-        }
     }
 
     //Algorithm 4.1 mod
@@ -65,7 +54,7 @@ open class Nurbs(maxDeg: Int): Bspline(maxDeg) {
     }
 
     //Algorithm 4.2 mod
-    override fun curveDers(t: Double, kmax: Int): Array<Vector3> {
+    override fun curveDers(kmax: Int, t: Double): Array<Vector3> {
         if(kmax == 0) return Array(1) { curvePoint(t) }
         // Compute kth derivatives
         val v = Array(kmax + 1) { Vector3() }
