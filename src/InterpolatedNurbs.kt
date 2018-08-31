@@ -3,10 +3,15 @@ package geoModel
 import linearAlgebra.MatrixSolvLU
 import linearAlgebra.Vector3
 
-class InterpolatedNurbs(maxDeg: Int): Nurbs(maxDeg) {
+class InterpolatedNurbs: Nurbs {
 
-    val pts = mutableListOf<Vector3>()
+    var pts = mutableListOf<Vector3>()
 
+    constructor(max: Int): super(max)
+    
+    constructor(max: Int, p: MutableList<Vector3>): super(max, p) {
+        this.pts = p
+    
     override fun addPts(v: Vector3) {
         pts.add(v); super.addPts(v); evalCtrlPoints()
     }
