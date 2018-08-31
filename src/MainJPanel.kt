@@ -59,9 +59,9 @@ class MainJPanel: JPanel() {
                         when(mode) {
                             Mode.View -> {}
                             Mode.Curve -> {
-                                if(c is InterpolatedBspline) {
-                                    for (t in c.prm) {
-                                        if (Point3(size, c.curvePoint(t)).contains(e.x, e.y)) {
+                                if(c is InterpolatedBspline || c is InterpolatedNurbs) {
+                                    for(t in c.prm) {
+                                        if (Point3(size, c(t)).contains(e.x, e.y)) {
                                             clickPts = true
                                             oldIndex = c.prm.indexOf(t)
                                             break
@@ -77,7 +77,10 @@ class MainJPanel: JPanel() {
                                         }
                                     }
                                 }
-                                if (!clickPts) c.addPts(v) // curve[ing].addPts(v)
+                                if (!clickPts) {
+                                    c.addPts(v)
+                                    oldIndex = c.pmr.size - 1
+                                }
                                 clickPts = false
                             }
                         }
@@ -96,7 +99,7 @@ class MainJPanel: JPanel() {
                     Mode.View -> {}
                     Mode.Curve -> {
                         val v = Vector3(e.x, e.y, 0)
-                        if(c is InterpolatedBspline) {
+                        if(c is InterpolatedBspline || c is InterpolatedNurbs) {
                             c.removePts(oldIndex)
                             c.addPts(oldIndex, v)
                             repaint()
@@ -160,53 +163,50 @@ class MainJPanel: JPanel() {
         val size = 10.0
         val half = size / 2
         val linePerNode = 8
-
-        for(b in curve) {
+        
+        g.stroke = BasicStroke()
+        for(c in curve) {
             //Draw control points
-            if(b is InterpolatedBspline || b is InterpolatedNurbs)
+            if(c is InterpolatedBspline || c is InterpolatedNurbs)
                 g.color = Color.LIGHT_GRAY
             else
                 g.color = Color.YELLOW
             for (v in b.ctrlPts) g.draw(Ellipse2D.Double(v.x - half, v.y - half, size, size))
             //Draw control polygon
-            if(b is InterpolatedBspline || b is InterpolatedNurbs)
+            if(c is InterpolatedBspline || c is InterpolatedNurbs)
                 g.color = Color.GRAY
             else
                 g.color = Color.WHITE
-            g.stroke = BasicStroke()
-            for (i in 1 until b.ctrlPts.size) {
-                g.drawLine(b.ctrlPts[i - 1].x.toInt(),
-                        b.ctrlPts[i - 1].y.toInt(),
-                        b.ctrlPts[i].x.toInt(),
-                        b.ctrlPts[i].y.toInt())
+            for (i in 1 until c.ctrlPts.size) {
+                g.drawLine(c.ctrlPts[i - 1].x.toInt(),
+                           c.ctrlPts[i - 1].y.toInt(),
+                           c.ctrlPts[i].x.toInt(),
+                           c.ctrlPts[i].y.toInt())
             }
             //Draw curve (interpolation of pts)
             g.color = Color.CYAN
-            g.stroke = BasicStroke()
-            val n = b.ctrlPts.size * linePerNode
-            if (b.ctrlPts.size > 1) for (i in 1 until n) {
-                val p1 = b.curvePoint((i - 1).toDouble() / (n - 1).toDouble())
-                val p2 = b.curvePoint(i.toDouble() / (n - 1).toDouble())
+            val n = c.ctrlPts.size * linePerNode
+            if (c.ctrlPts.size > 1) for (i in 1 until n) {
+                val p1 = c((i - 1).toDouble() / (n - 1).toDouble())
+                val p2 = c(i.toDouble() / (n - 1).toDouble())
                 g.drawLine(p1.x.toInt(),
-                        p1.y.toInt(),
-                        p2.x.toInt(),
-                        p2.y.toInt())
+                           p1.y.toInt(),
+                           p2.x.toInt(),
+                           p2.y.toInt())
             }
             //Draw points
             g.color = Color.YELLOW
-            g.stroke = BasicStroke()
-            if(b is InterpolatedBspline || b is InterpolatedNurbs)
-                for (p in b.prm)
+            if(c is InterpolatedBspline || c is InterpolatedNurbs)
+                for (p in c.prm)
                     g.draw(Ellipse2D.Double(
-                            b.curvePoint(p).x - half,
-                            b.curvePoint(p).y - half,
+                            c(p).x - half,
+                            c(p).y - half,
                             size,
                             size)
                     )
-
-
             //Draw derivatives at t = 0.5
-            /*for (i in 1..3) {
+            for(t in c.prm)
+            for(i in 1..3) {
                 g.color = when (i) {
                     1 -> Color.RED
                     2 -> Color.GREEN
@@ -215,10 +215,12 @@ class MainJPanel: JPanel() {
                         Color.GRAY
                     }
                 }
-                val p1 = b.curvePoint(0.5)
-                val p2 = b.curveDers(0.5, 3)[i] + p1
+                val p1 = c(t)
+                val p2 = c(3, t)[i]
+                if(p2.length == 0.0) p2 = p1
+                else p2 = p1 + p2.normalized * 30 //30 pixels
                 g.drawLine(p1.x.toInt(),p1.y.toInt(),p2.x.toInt(),p2.y.toInt())
-            }*/
+            }
         }
     }
 
@@ -228,9 +230,9 @@ class MainJPanel: JPanel() {
             Mode.View -> {}
             Mode.Curve -> {
                 val c = curve[ing]
-                if(c is InterpolatedBspline)
+                if(c is InterpolatedBspline || c is InterpolatedNurbs)
                     for(t in c.prm)
-                        list.add(arrayOf(c.curvePoint(t).x, c.curvePoint(t).y, c.curvePoint(t).z))
+                        list.add(arrayOf(c(t).x, c(t).y, c(t).z))
                 else
                     for(p in c.ctrlPts)
                         list.add(arrayOf(p.x, p.y, p.z))
