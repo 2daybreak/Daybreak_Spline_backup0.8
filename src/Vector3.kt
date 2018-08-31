@@ -9,6 +9,7 @@ class Vector3(val x: Double, val y: Double, val z: Double) {
     val unitY  get() = Vector3(0.0, 1.0, 0.0)
     val unitZ  get() = Vector3(0.0, 0.0, 1.0)
     val length get() = sqrt(x * x + y * y + z * z)
+    val normalized get() = Vector3(x/length, y/length, z/length)
 
     constructor(): this(0.0, 0.0, 0.0)
     constructor(v: Vector3): this(v.x, v.y, v.z)
