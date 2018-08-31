@@ -3,39 +3,30 @@ package geoModel
 import linearAlgebra.Vector3
 import linearAlgebra.MatrixSolvLU.*
 
-class InterpolatedBspline(maxDeg: Int): Bspline(maxDeg) {
+class InterpolatedBspline: Bspline {
 
     val pts = mutableListOf<Vector3>()
+    
+    constructor(max: Int): super(max)
+    
+    constructor(max: Int, p: MutableList<Vector3>): super(max, p) {
+        this.pts = p
+        evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints()
+    }
 
     override fun addPts(v: Vector3) {
-        pts.add(v); super.addPts(v); evalCtrlPoints()
+        pts.add(v)
+        evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints()
     }
 
     override fun addPts(i: Int, v: Vector3) {
-        pts.add(i, v); super.addPts(i, v); evalCtrlPoints()
+        pts.add(i, v)
+        evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints()
     }
 
     override fun removePts(i: Int) {
-        super.removePts(i)
         if(i != -1) pts.removeAt(i)
-        if(!pts.isEmpty()) evalCtrlPoints()
-    }
-
-    override fun evalPrm() {
-        prm.clear()
-        var sum = 0.toDouble()
-        prm.add(sum)
-        //Chord length method
-        for(i in 1 until pts.count())
-        {
-            val del = pts[i] - pts[i - 1]
-            sum += del.length
-        }
-        for(i in 1 until pts.count())
-        {
-            val del = pts[i] - pts[i - 1]
-            prm.add(prm[i - 1] + del.length / sum)
-        }
+        if(!pts.isEmpty()) { evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints() }
     }
 
     //Algorithm 9.1
