@@ -103,7 +103,6 @@ class MainFrame : JFrame() {
         jMenuBar.add(curve)
 
         val line = JMenuItem("Line")
-        curve.add(line)
         line.addActionListener{ e: ActionEvent -> modelTree.mainPanel.curve.add(Line())
             modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
             modelTree.mainPanel.mode = MainJPanel.Mode.Curve
@@ -111,12 +110,13 @@ class MainFrame : JFrame() {
             modelTree.model.reload()
             modelTree.tree.expandRow(0)
         }
+        curve.add(line)
 
         val circle = JMenuItem("Circle")
-        curve.add(circle)
         circle.addActionListener{ e: ActionEvent ->
             modelTree.mainPanel.curve.add(Circle(Vector3(300.0, 300.0, 0.0), 300.0))
         }
+        curve.add(circle)
 
         val spline = JMenu("Spline")
         curve.add(spline)
