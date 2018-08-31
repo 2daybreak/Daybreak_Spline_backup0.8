@@ -4,20 +4,24 @@ import linearAlgebra.Vector3
 
 abstract class Parametric {
 
-    val prm = mutableListOf<Double>()
+    public abstract val prm: MutableList<Double>
 
-    abstract val ctrlPts: MutableList<Vector3>
+    public abstract val ctrlPts: MutableList<Vector3>
 
-    protected abstract fun evalPrm()
+    public abstract fun addPts(v: Vector3)
 
-    abstract fun addPts(v: Vector3)
+    public abstract fun addPts(i: Int, v: Vector3)
 
-    abstract fun addPts(i: Int, v: Vector3)
+    public abstract fun removePts(i: Int)
+    
+    public operator fun invoke(t: Double): Vector3 { return curvePoint(t) }
+    
+    public operator fun invoke(k: Int, t: Double): Array<Vector3> { return curveDers(k, t) }
 
-    abstract fun removePts(i: Int)
+    protected abstract fun evalPrm(p: MutableList<Vector3>)
+    
+    protected abstract fun curvePoint(t: Double): Vector3
 
-    abstract fun curvePoint(t: Double): Vector3
-
-    abstract fun curveDers(t: Double, kmax: Int): Array<Vector3>
+    protected abstract fun curveDers(kmax: Int, t: Double): Array<Vector3>
 
 }
