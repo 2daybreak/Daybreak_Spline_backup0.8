@@ -16,7 +16,7 @@ abstract class Parametric {
     
     public operator fun invoke(t: Double): Vector3 { return curvePoint(t) }
     
-    public operator fun invoke(k: Int, t: Double): Array<Vector3> { return curveDers(k, t) }
+    public operator fun invoke(kmax: Int, t: Double): Array<Vector3> { return curveDers(kmax, t) }
 
     protected abstract fun evalPrm(p: MutableList<Vector3>)
     
