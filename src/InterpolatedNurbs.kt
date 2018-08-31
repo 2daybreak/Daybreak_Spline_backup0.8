@@ -15,17 +15,17 @@ class InterpolatedNurbs: Nurbs {
     }
     
     override fun addPts(v: Vector3) {
-        pts.add(v)
+        pts.add(v); wts.add(1.0)
         evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints()
     }
 
     override fun addPts(i: Int, v: Vector3) {
-        pts.add(i, v)
+        pts.add(i, v); wts.add(i, 1.0)
         evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints()
     }
 
     override fun removePts(i: Int) {
-        if(i != -1) pts.removeAt(i);
+        if(i != -1) { pts.removeAt(i); wts.removeAt(i) }
         if(!pts.isEmpty()) { evalPrm(pts); degree(); order(); evalKnots(); evalCtrlPoints() }
     }
 
