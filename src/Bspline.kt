@@ -2,19 +2,31 @@ package geoModel
 
 import linearAlgebra.Vector3
 
-open class Bspline(private val maxDeg: Int): Parametric() {
+open class Bspline: Parametric {
 
     /*  A B-Spline curve is defined by
         C(oldVector) = Sum( Ni(oldVector) * Pi )
         where Pi are the control points, and Ni(oldVector) are the basis funcs defined on the knot vector */
-
-    override val ctrlPts = mutableListOf<Vector3>()
+    var maxDeg = 0
+    
+    final override var prm = mutableListOf<Double>()
+    final override var ctrlPts = mutableListOf<Vector3>()
+    
     protected val knots = mutableListOf<Double>()
     protected var degree = 0
     protected var order = 1
 
+    constructor(max: Int) {
+        maxDeg = max
+    }
+    
+    constructor(max: Int, p: MutableList<Vector3>) {
+        this.ctrlPts = p
+        evalPrm(ctrlPts); degree(); order(); evalKnots()
+    }
+    
     protected fun degree() {
-        val nm1 = ctrlPts.size - 1
+        val nm1 = prm.size - 1
         degree = when(nm1 > maxDeg) {
             true  -> maxDeg
             false -> nm1
@@ -25,32 +37,32 @@ open class Bspline(private val maxDeg: Int): Parametric() {
 
     override fun addPts(v: Vector3) {
         ctrlPts.add(v)
-        degree(); order(); evalPrm(); evalKnots()
+        evalPrm(ctrlPts); degree(); order();  evalKnots()
     }
 
     override fun addPts(i: Int, v: Vector3) {
         ctrlPts.add(i, v)
-        degree(); order(); evalPrm(); evalKnots()
+        evalPrm(ctrlPts); degree(); order();  evalKnots()
     }
 
     override fun removePts(i: Int) {
         if(i != -1) ctrlPts.removeAt(i)
-        if(!ctrlPts.isEmpty()) degree(); order(); evalPrm(); evalKnots()
+        if(!ctrlPts.isEmpty()) { evalPrm(ctrlPts); degree(); order();  evalKnots() }
     }
 
-    override fun evalPrm() {
+    final override fun evalPrm(p: MutableList<Vector3>) {
         prm.clear()
         var sum = 0.toDouble()
         prm.add(sum)
         //Chord length method
-        for(i in 1 until ctrlPts.count())
+        for(i in 1 until p.count())
         {
-            val del = ctrlPts[i] - ctrlPts[i - 1]
+            val del = p[i] - p[i - 1]
             sum += del.length
         }
-        for(i in 1 until ctrlPts.count())
+        for(i in 1 until p.count())
         {
-            val del = ctrlPts[i] - ctrlPts[i - 1]
+            val del = p[i] - p[i - 1]
             prm.add(prm[i - 1] + del.length / sum)
         }
     }
@@ -227,7 +239,7 @@ open class Bspline(private val maxDeg: Int): Parametric() {
     }
 
     //Algorithm 3.2
-    override fun curveDers(t: Double, kmax: Int): Array<Vector3> {
+    override fun curveDers(kmax: Int, t: Double): Array<Vector3> {
         // Compute kth derivatives
         val v = Array(kmax + 1) { Vector3() }
         /* Allow kmax > degree, although the ders. are 0 in this case for nonrational curves,
@@ -315,12 +327,12 @@ open class Bspline(private val maxDeg: Int): Parametric() {
                 t = tmp
             }
         }
-        var u = curveDers(t, 2)
+        var u = curveDers(2, t)
         var isOrthogonal = false
         var isCoincidence = false
         while(!isOrthogonal || !isCoincidence) {
             t -= u[1].dot(u[0] - v) / (u[2].dot(u[0] - v) + u[1].dot(u[1]))
-            u = curveDers(t, 2)
+            u = curveDers(2, t)
             isOrthogonal = u[1].dot(u[0] - v) < 0.000001
             isCoincidence = (u[0] - v).length < 0.000001
         }
