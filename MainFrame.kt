@@ -76,7 +76,17 @@ class MainFrame : JFrame() {
         val open = JMenuItem("Open")
         file.add(open)
         open.accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK)
-        open.addActionListener{e: ActionEvent -> TODO()}
+        open.addActionListener{e: ActionEvent -> 
+            val chooser = JFileChooser()
+            chooser.fileFilter = FilterNameExtensionFilter("JPG", "jpg")
+            chooser.dialogTitle = "Open file"
+            val flag = chooser.showOpenDialog(null)
+            val filePath: String
+            if(flag == JFileChooser.APPROVE_OPTION) {
+                filePath = chooser.selectedFile.path
+                println(filePath)
+            }
+        }
 
         file.addSeparator()
         val exit = JMenuItem("Exit")
