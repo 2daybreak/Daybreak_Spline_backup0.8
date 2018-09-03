@@ -6,14 +6,17 @@ import javax.swing.* //Swing: Light weight component
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.AbstractAction
 
-
-
 class MainFrame : JFrame() {
 
-    //private val mainPanel = MainJPanel()
     private val modelTree = ModelTree()
-    private val splitPane = JSplitPane(1, modelTree, modelTree.mainPanel)
+    private val splitPane = JSplitPane(1, modelTree, modelTree.tabs)
 
+    private val circle   = Menu("Circle", modelTree, 0)
+    private val ctlBspln = Menu("Circle", modelTree, 1)
+    private val intBspln = Menu("Circle", modelTree, 2)
+    private val ctlNurbs = Menu("Circle", modelTree, 3)
+    private val intNurbs = Menu("Circle", modelTree, 4)
+    
     init {
 
         title = "MainFrame"
@@ -25,12 +28,30 @@ class MainFrame : JFrame() {
         contentPane.addKeyListener(KeyHandler())
         contentPane.requestFocus()
 
-        MainMenuBar()
+        menuBar()
+        toolBar()
 
         setSize(1024, 600)
     }
 
-    private fun MainMenuBar() {
+    private fun toolbar() {
+        val bar = JToolBar()
+        bar.add(ctlBspln.btm)
+        bar.add(intBspln.btm)
+        bar.addSeparator()
+        bar.add(JTextField("Text Field"))
+        
+        val dialog = JDialog()
+        dialog.title = "Setting"
+        dialog.add(JButton("TODO"))
+        dialog.setSize(200, 200)
+        val setting = JButton("Setting")
+        setting.addActionListener { e: ActionEvent ->
+            dialog.isVisible = true
+        }
+        bar.add(setting)
+    
+    private fun menuBar() {
 
         this.jMenuBar = JMenuBar()
 
@@ -105,72 +126,16 @@ class MainFrame : JFrame() {
         val curve = JMenu("Curve")
         jMenuBar.add(curve)
 
-        val line = JMenuItem("Line")
-        curve.add(line)
-        line.addActionListener{ e: ActionEvent -> modelTree.mainPanel.curve.add(Line())
-            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
-            modelTree.geometry.add(DefaultMutableTreeNode("line"))
-            modelTree.model.reload()
-            modelTree.tree.expandRow(0)
-        }
-
-        val circle = JMenuItem("Circle")
-        curve.add(circle)
-        circle.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.curve.add(Circle(Vector3(300.0, 300.0, 0.0), 300.0))
-        }
-
-        val spline = JMenu("Spline")
-        curve.add(spline)
-
-        val ctrlBspline = JMenuItem("Control Points")
-        ctrlBspline.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.curve.add(Bspline())
-            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
-            modelTree.geometry.add(DefaultMutableTreeNode("spline"))
-            modelTree.model.reload()
-            modelTree.tree.expandRow(0)
-        }
-        spline.add(ctrlBspline)
-
-        val passBspline = JMenuItem("Passing Points")
-        passBspline.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.curve.add(InterpolatedBspline())
-            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
-            modelTree.geometry.add(DefaultMutableTreeNode("spline"))
-            modelTree.model.reload()
-            modelTree.tree.expandRow(0)
-        }
-        spline.add(passBspline)
-
+        val bspline = JMenu("B-Spline")
         val nurbs = JMenu("Nurbs")
+        curve.add(circle.item)
+        curve.add(bspline)
         curve.add(nurbs)
-
-        val ctrlNurbs = JMenuItem("Control Points")
-        ctrlNurbs.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.curve.add(Nurbs())
-            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
-            modelTree.geometry.add(DefaultMutableTreeNode("nurbs"))
-            modelTree.model.reload()
-            modelTree.tree.expandRow(0)
-        }
-        nurbs.add(ctrlNurbs)
-
-        val passNurbs = JMenuItem("Passing Points")
-        passNurbs.addActionListener{ e: ActionEvent ->
-            modelTree.mainPanel.curve.add(InterpolatedNurbs())
-            modelTree.mainPanel.ing = modelTree.mainPanel.curve.size - 1
-            modelTree.mainPanel.mode = MainJPanel.Mode.Curve
-            modelTree.geometry.add(DefaultMutableTreeNode("nurbs"))
-            modelTree.model.reload()
-            modelTree.tree.expandRow(0)
-        }
-        nurbs.add(passNurbs)
-
+        bspline.add(ctlBspln.item)
+        bspline.add(intBspln.item)
+        nurbs.add(ctlNurbs.item)
+        nurbs.add(intNurbs.item)
+        
         val surface = JMenu("Surface")
         jMenuBar.add(surface)
 
