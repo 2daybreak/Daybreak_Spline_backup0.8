@@ -11,7 +11,7 @@ open class Bspline: Parametric {
 
     final override var prm = mutableListOf<Double>()
     final override var ctrlPts = mutableListOf<Vector3>()
-    final override var endDers = arrayOf(Vector3().unitY*500, Vector3())
+    final override var endDers = arrayOf(Vector3().unitX, Vector3().unitX)
     protected val knots = mutableListOf<Double>()
     /**
      * Original : prm to be assigned by chord length, and then knots to be evaluated by prm
@@ -80,25 +80,27 @@ open class Bspline: Parametric {
     }
 
     protected fun evalPrm(p: MutableList<Vector3>) {
+        val n = p.size
         prm.clear()
         var sum = 0.toDouble()
         prm.add(sum)
         //Chord length method
-        for (i in 1 until p.count()) {
+        for (i in 1 until n) {
             val del = p[i] - p[i - 1]
             sum += del.length
         }
-        for (i in 1 until p.count()) {
+        for (i in 1 until n) {
             val del = p[i] - p[i - 1]
             prm.add(prm[i - 1] + del.length / sum)
         }
-        chord = sum
+        chord = sum / n
     }
 
     protected fun evalKnots() {
         knots.clear()
         for (i in 1..order) knots.add(0.toDouble())
         for (i in 1..order) knots.add(1.toDouble())
+        if(prm.size <= 2)
         for (i in 1..prm.size - order) {
             var interval = 0.0
             //averaging spacing(reflecting the distribution of prm)
@@ -106,6 +108,15 @@ open class Bspline: Parametric {
             interval /= degree
             knots.add(degree + i, interval)
         }
+        else
+        for (i in 0..prm.size - degree) {
+            var interval = 0.0
+            //averaging spacing(reflecting the distribution of prm)
+            for (j in i until i + degree) interval += prm[j]
+            interval /= degree
+            knots.add(degree + i, interval)
+        }
+        println(knots)
     }
 
     private fun uniformKnots(n: Int) {
