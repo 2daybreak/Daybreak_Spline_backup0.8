@@ -1,13 +1,13 @@
 import java.awt.Color
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
-import javax.swing.JTree
-import javax.swing.JScrollPane
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
-class ModelTree: JScrollPane() {
+class ModelTree {
 
+    //Left
     val geometry = DefaultMutableTreeNode("Geometry")
     val grid = DefaultMutableTreeNode("Grid")
     val root = DefaultMutableTreeNode("Root")
@@ -15,11 +15,26 @@ class ModelTree: JScrollPane() {
     val tree = JTree(model)
     val beginCurve = 1 // tunning
 
+    //Right
     val mainPanel = MainJPanel()
+    val tabs = JTabbedPane()
+
+    //Left & Right
+    val splitPane = JSplitPane(1, tree, tabs)
 
     init {
 
-        getViewport().add(tree)
+        splitPane.dividerSize = 3
+        splitPane.dividerLocation = 150
+
+        tabs.addTab("geometry",mainPanel)
+        tabs.addTab("pitch", JLabel())
+        tabs.addTab("chord",JLabel())
+        tabs.addTab("skew",JLabel())
+        tabs.addTab("rake",JLabel())
+        tabs.addTab("camber",JLabel())
+        tabs.addTab("thickness",JLabel())
+
         root.add(geometry)
         root.add(grid)
         tree.expandRow(0)
@@ -37,13 +52,6 @@ class ModelTree: JScrollPane() {
                 if(row != -1) mainPanel.ing = row - beginCurve
             }
         })
-        /*
-        tree.addTreeSelectionListener{e: TreeSelectionEvent ->
-            val node = tree.lastSelectedPathComponent
-                    as? DefaultMutableTreeNode?: DefaultMutableTreeNode()
-            println("TreeSelectionListener is activating")
-            mainPanel.ing = geometry.getIndex(node)
-        }
-        */
+
     }
 }
