@@ -4,19 +4,20 @@ import javax.swing.JPopupMenu
 
 class PopupMenu: JPopupMenu() {
 
-    init {
-        val slope = JMenuItem("Slope")
-        val lock = JMenuItem("Lock")
-        val unlock = JMenuItem("Unlock")
-        val cut = JMenuItem("Cut")
-        val copy = JMenuItem("Copy")
-        val paste = JMenuItem("Paste")
-        val pts = JMenuItem("Show Passing Points")
-        val ctp = JMenuItem("Show Control Points")
+    val slope = JMenuItem("Slope")
+    val lock = JMenuItem("Lock")
+    val unlock = JMenuItem("Unlock")
+    val cut = JMenuItem("Cut")
+    val copy = JMenuItem("Copy")
+    val paste = JMenuItem("Paste")
+    val pts = JMenuItem("Show Passing Points")
+    val ctp = JMenuItem("Show Control Points")
 
-        slope.addActionListener { e: ActionEvent ->
+    init {
+
+        /*slope.addActionListener { e: ActionEvent ->
             slope.isEnabled = false
-        }
+        }*/
 
         this.add(slope)
         this.add(lock)

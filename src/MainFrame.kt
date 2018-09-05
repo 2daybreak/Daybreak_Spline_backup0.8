@@ -1,36 +1,35 @@
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
-import javax.swing.* //Swing: Light weight component
+import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
 class MainFrame : JFrame() {
 
-    private val modelTree = ModelTree()
-    private val circle = Menu("Circle", modelTree, 0)
-    private val controlPointBspline = Menu("Control Points", modelTree, 1)
-    private val interpolatedBspline = Menu("Passing Points", modelTree, 2)
-    private val controlPointNurbs = Menu("Control Points", modelTree, 3)
-    private val interpolatedNurbs = Menu("Passing Points", modelTree, 4)
-    
+    private val center = MainSplitPane()
+    private val circle = ActionList("Circle", center, 0)
+    private val cBspln = ActionList("Control Points", center, 1)
+    private val iBspln = ActionList("Passing Points", center, 2)
+    private val cNurbs = ActionList("Control Points", center, 3)
+    private val iNurbs = ActionList("Passing Points", center, 4)
+
     init {
 
         title = "MainFrame"
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         isVisible = true
-        contentPane.add(modelTree.splitPane)
+        contentPane.add(center)
         contentPane.addKeyListener(KeyHandler())
         contentPane.requestFocus()
 
         menuBar()
         toolBar()
-
         setSize(1024, 600)
     }
 
     fun toolBar() {
         val bar = JToolBar()
-        bar.add(controlPointBspline.btm)
-        bar.add(interpolatedBspline.btm)
+        bar.add(cBspln.btm)
+        bar.add(iBspln.btm)
         bar.addSeparator()
         bar.add(JTextField("Text Field"))
 
@@ -130,15 +129,15 @@ class MainFrame : JFrame() {
         val curve = JMenu("Curve")
         jMenuBar.add(curve)
 
-        val bspline = JMenu("B-Spline")
+        val bspln = JMenu("B-Spline")
         val nurbs = JMenu("Nurbs")
         curve.add(circle.itm)
-        curve.add(bspline)
+        curve.add(bspln)
         curve.add(nurbs)
-        bspline.add(this.controlPointBspline.itm)
-        bspline.add(interpolatedBspline.itm)
-        nurbs.add(this.controlPointNurbs.itm)
-        nurbs.add(interpolatedNurbs.itm)
+        bspln.add(cBspln.itm)
+        bspln.add(iBspln.itm)
+        nurbs.add(cNurbs.itm)
+        nurbs.add(iNurbs.itm)
 
         val surface = JMenu("Surface")
         jMenuBar.add(surface)
@@ -152,7 +151,7 @@ class MainFrame : JFrame() {
         val dataTable = JMenuItem("DataTable")
         dataTable.accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK)
         dataTable.addActionListener { e: ActionEvent ->
-            modelTree.mainPanel.subFrame.isVisible = true
+            center.mainPanel.subFrame.isVisible = true
         }
         window.add(dataTable)
 

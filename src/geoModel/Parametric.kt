@@ -28,6 +28,4 @@ interface Parametric {
     fun split(t: Double)
 
     fun draw(g: Graphics2D)
-
-
 }
